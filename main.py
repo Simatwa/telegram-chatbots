@@ -6,6 +6,10 @@ from dotenv import load_dotenv
 from Bard import Chatbot
 from WebChatGPT import ChatGPT
 
+__prog__ = "telegram-chatbots"
+__version__ = "0.0.1"
+
+
 load_dotenv(".env")
 
 from_env = lambda key, default: os.environ.get(key, default)
@@ -23,7 +27,24 @@ logging.basicConfig(
     level=logging_levels.get(from_env("logging_level", 20)),
     datefmt="%d-%b-%Y %H:%M:%S",
 )
+logging.info(f"{__prog__} - v{__version__}")
+allowed_user_ids = from_env("users_id", "").split(",")
 
+show_exceptions = from_env("show_exceptions", "true") == "true"
+
+logging.info(f"I will show exceptions - {show_exceptions}")
+
+ERR = None if show_exceptions else "Error occurred while generating response!"
+
+logging.info(f"Whitelisted users : {allowed_user_ids}")
+
+format_exception = lambda e: e.args[1] if len(e.args) > 1 else str(e)
+
+default_settings = {
+    "chatbot": from_env("default_chatbot", "chatgpt"),
+}
+
+conversations = {}
 
 logging.info("Initializing Bard Chatbot")
 bard = Chatbot(
@@ -40,17 +61,10 @@ chatgpt = ChatGPT(
 logging.info("Initializing Telegram bot")
 bot = telebot.TeleBot(from_env("telebot", ""))
 
-allowed_user_ids = from_env("users_id", "").split(",")
 
-show_exceptions = from_env("show_exceptions", "true") == "true"
-
-logging.info(f"I will show exceptions - {show_exceptions}")
-
-ERR = None if show_exceptions else "Error occurred while generating response!"
-
-logging.info(f"Whitelisted users : {allowed_user_ids}")
-
-format_exception = lambda e: e.args[1] if len(e.args) > 1 else str(e)
+for user in allowed_user_ids:
+    assert user.isdigit(), "Users id can contain digits only"
+    conversations[int(user)] = default_settings
 
 
 def is_verified(message):
@@ -85,6 +99,8 @@ def display_help(message):
     /myId : Check your Telegram's ID
     /bard : Chat with Bard - **Google**
     /chatgpt : Chat with ChatGPT - **OpenAI**
+
+    Default LLM is the one you recently used.
     
     Have some fun!
    
@@ -105,10 +121,11 @@ def user_id(message):
     )
 
 
-def handle_chatbot(default_text: str = ERR):
+def handle_chatbot(llm_name: str = "", default_text: str = ERR):
     """Handles chatbot exceptions & validates user safely
 
     Args:
+        llm_name (str, optional): LLM name for generating response
         default_text (str, optional): Text to be returned incase of an exception.''.
     """
 
@@ -120,6 +137,8 @@ def handle_chatbot(default_text: str = ERR):
                     return bot.reply_to(
                         message, anonymous_user(message), parse_mode="Markdown"
                     )
+                if llm_name:
+                    conversations[message.from_user.id]["chatbot"] = llm_name
                 return func(message)
 
             except Exception as e:
@@ -134,16 +153,29 @@ def handle_chatbot(default_text: str = ERR):
     return decorator
 
 
-@bot.message_handler(commands=["bard"])
-@handle_chatbot()
+@bot.message_handler(
+    commands=["bard"],
+)
+@handle_chatbot("bard")
 def chat_with_bard(message):
     bot.reply_to(message, bard.ask(message.text).get("content"), parse_mode="Markdown")
 
 
 @bot.message_handler(commands=["chatgpt"])
-@handle_chatbot()
+@handle_chatbot("chatgpt")
 def chat_with_chatgpt(message):
     bot.reply_to(message, chatgpt.chat(message.text), parse_mode="Markdown")
+
+
+@bot.message_handler(func=lambda msg: True)
+@handle_chatbot()
+def auto_detect_chatbot(message):
+    if conversations[message.from_user.id]["chatbot"] == "bard":
+        bot.reply_to(
+            message, bard.ask(message.text).get("content"), parse_mode="Markdown"
+        )
+    else:
+        bot.reply_to(message, chatgpt.chat(message.text), parse_mode="Markdown")
 
 
 if __name__ == "__main__":
