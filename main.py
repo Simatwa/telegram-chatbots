@@ -128,20 +128,35 @@ def user_id(message):
     )
 
 
+def handle_chatbot(default_text:str=''):
+    """Handles chatbot exceptions & validates users safely
+
+    Args:
+        default_text (str, optional): Text to be returned incase of an exception.''.
+    """
+    def decorator(func):
+        def main(message):
+            try:
+                if not is_verified(message):
+                    # Not whitelisted user
+                    return bot.reply_to(message, anonymous_user(message), parse_mode="Markdown")
+                return func(message)
+            
+            except Exception as e:
+                return bot.reply_to(message,default_text or format_exception(e))
+            
+        return main
+    return decorator
+
 @bot.message_handler(commands=["bard"])
+@handle_chatbot()
 def chat_with_bard(message):
-    if is_verified(message):
-        bot.reply_to(message, bard_gen_response(message.text), parse_mode="Markdown")
-    else:
-        bot.reply_to(message, anonymous_user(message), parse_mode="Markdown")
+    bot.reply_to(message, bard_gen_response(message.text), parse_mode="Markdown")
 
 
 @bot.message_handler(commands=["chatgpt"])
 def chat_with_chatgpt(message):
-    if is_verified(message):
-        bot.reply_to(message, chatgpt_gen_response(message.text), parse_mode="Markdown")
-    else:
-        bot.reply_to(message, anonymous_user(message), parse_mode="Markdown")
+    bot.reply_to(message, chatgpt_gen_response(message.text), parse_mode="Markdown")
 
 
 if __name__ == "__main__":
