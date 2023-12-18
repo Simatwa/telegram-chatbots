@@ -1,0 +1,4 @@
+pyTelegramBotAPI==4.14.0
+python-dotenv==1.0.0
+webchatgpt==0.0.2
+GoogleBard==1.4.0
