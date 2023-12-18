@@ -42,6 +42,12 @@ bot = telebot.TeleBot(from_env("telebot", ""))
 
 allowed_user_ids = from_env("users_id", "").split(",")
 
+show_exceptions = from_env("show_exceptions", "true") == "true"
+
+logging.info(f"I will show exceptions - {show_exceptions}")
+
+ERR = None if show_exceptions else "Error occurred while generating response!"
+
 logging.info(f"Whitelisted users : {allowed_user_ids}")
 
 format_exception = lambda e: e.args[1] if len(e.args) > 1 else str(e)
@@ -63,35 +69,6 @@ def anonymous_user(message):
 	Get the sourcecodes from [Github](https://github.com/Simatwa/telegram-chatbots).
 	"""
     return response.strip()
-
-
-def bard_gen_response(text):
-    """Generate response with Bard
-    Args:
-        text (str): Prompt
-
-    Returns:
-        str: Response generated
-    """
-    try:
-        return bard.ask(text).get("content")
-    except Exception as e:
-        return format_exception(e)
-
-
-def chatgpt_gen_response(text):
-    """Generate response with ChatGPT
-
-    Args:
-        text (str): Prompt
-
-    Returns:
-        str: Response generated
-    """
-    try:
-        return chatgpt.chat(text)
-    except Exception as e:
-        return format_exception(e)
 
 
 @bot.message_handler(commands=["start", "help"])
@@ -128,35 +105,45 @@ def user_id(message):
     )
 
 
-def handle_chatbot(default_text:str=''):
-    """Handles chatbot exceptions & validates users safely
+def handle_chatbot(default_text: str = ERR):
+    """Handles chatbot exceptions & validates user safely
 
     Args:
         default_text (str, optional): Text to be returned incase of an exception.''.
     """
+
     def decorator(func):
         def main(message):
             try:
                 if not is_verified(message):
-                    # Not whitelisted user
-                    return bot.reply_to(message, anonymous_user(message), parse_mode="Markdown")
+                    # Not a whitelisted user
+                    return bot.reply_to(
+                        message, anonymous_user(message), parse_mode="Markdown"
+                    )
                 return func(message)
-            
+
             except Exception as e:
-                return bot.reply_to(message,default_text or format_exception(e))
-            
+                return bot.reply_to(
+                    message,
+                    f"*{default_text or format_exception(e)}*",
+                    parse_mode="Markdown",
+                )
+
         return main
+
     return decorator
+
 
 @bot.message_handler(commands=["bard"])
 @handle_chatbot()
 def chat_with_bard(message):
-    bot.reply_to(message, bard_gen_response(message.text), parse_mode="Markdown")
+    bot.reply_to(message, bard.ask(message.text).get("content"), parse_mode="Markdown")
 
 
 @bot.message_handler(commands=["chatgpt"])
+@handle_chatbot()
 def chat_with_chatgpt(message):
-    bot.reply_to(message, chatgpt_gen_response(message.text), parse_mode="Markdown")
+    bot.reply_to(message, chatgpt.chat(message.text), parse_mode="Markdown")
 
 
 if __name__ == "__main__":
