@@ -23,7 +23,7 @@ Clone and install dependencies
 
 ```
 git clone https://github.com/Simatwa/telegram-bots
-cd telegram-bots
+cd telegram-chatbots
 pip install -r requirements.txt
 ```
 
