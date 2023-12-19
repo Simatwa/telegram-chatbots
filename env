@@ -6,6 +6,7 @@ openai_authorization=<openai-authorization-token>
 logging_level=<either 10,20, 30, 40 or 50>
 show_exceptions=true
 default_chatbot=chatgpt
+log_path=
 
 #       visit 
 # https://github.com/acheong08/Bard 
