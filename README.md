@@ -2,9 +2,9 @@
 
 <p align="center">
 <a href="https://https://github.com/Simatwa/telegram-chatbots/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-blue.svg"/></a>
-<a href="https://github.com/Simatwa/telegram-chatbots/releases"><img src="https://img.shields.io/github/downloads/Simatwa/telegram-chatbots/total?label=Downloads&color=success" alt="Downloads"></img></a>
-<a href="https://github.com/Simatwa/telegram-chatbots/releases"><img src="https://img.shields.io/github/v/release/Simatwa/telegram-chatbots?color=success" alt="Latest release"></img></a>
-<a href="https://github.com/Simatwa/telegram-chatbots/releases"><img src="https://img.shields.io/github/release-date/Simatwa/telegram-chatbots" alt="release date"></img></a>
+<!--<a href="https://github.com/Simatwa/telegram-chatbots/releases"><img src="https://img.shields.io/github/downloads/Simatwa/telegram-chatbots/total?label=Downloads&color=success&logo=github" alt="Downloads"></img></a> -->
+<a href="https://github.com/Simatwa/telegram-chatbots/releases"><img src="https://img.shields.io/github/v/release/Simatwa/telegram-chatbots?color=success&logo=github&label=Release" alt="Latest release"></img></a>
+<a href="https://github.com/Simatwa/telegram-chatbots/releases"><img src="https://img.shields.io/github/release-date/Simatwa/telegram-chatbots?logo=github&label=Release date" alt="release date"></img></a>
 <a href="https://github.com/psf/black"><img alt="Black" src="https://img.shields.io/static/v1?logo=Black&label=Code-style&message=Black"/></a>
 <a href="https://wakatime.com/badge/github/Simatwa/telegram-chatbots"><img src="https://wakatime.com/badge/github/Simatwa/telegram-chatbots.svg" alt="wakatime"></a>
 </p>
