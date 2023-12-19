@@ -7,7 +7,7 @@ from Bard import Chatbot
 from WebChatGPT import ChatGPT
 
 __prog__ = "telegram-chatbots"
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 
 load_dotenv(".env")
