@@ -45,7 +45,7 @@ After filling the [env](env) file, rename it to `.env` and vallah! You're just o
 
 Since this is a **personal** bot, you have to uniquely identify yourself with the bot, so you'll be required to hunt down your **user id**. 
 
-So fire up the bot, `python main.py` and  then on the chat panel, send this command `myId` inorder for the bot to echo back your *Telegram's User ID*. Add the id to the [`.env`](env) file as `users_id=<user-id>`. If you would like multiple users to access the bot, add their IDs as well separated by commas. i.e `users_id=11223344,55667788`.
+So fire up the bot, `python user_id.py` and  then on the chat panel, send this command `myId` inorder for the bot to echo back your *Telegram's User ID*. Add the id to the [`.env`](env) file as `users_id=<user-id>`. If you would like multiple users to access the bot, add their IDs as well separated by commas. i.e `users_id=11223344,55667788`.
 
 Simply run `python main.py` and have some fun.
 
