@@ -15,6 +15,12 @@
 
 Unofficial Telegram bot for ChatGPT and Bard 
 
+## Features 
+
+* Intergratin with [Bard](https://bard.google.com)
+* Intergration with [ChatGPT](https://chat.openai.com)
+* Parse [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt-prompts) on the fly.
+
 ## Pre-requisites 
 
 1. [Python](https://python.org)>=3.10 Installed
