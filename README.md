@@ -42,7 +42,6 @@ They include :
 | ---------- | ------- |
 | [bard](https://github.com/acheong08/Bard)  | Google's bard session key |
 | [openai_cookie_file](https://github.com/Simatwa/WebChatGPT) | Path to openai-cookie-file.json | 
-| [openai_authorization](https://github.com/Simatwa/WebChatGPT) | Openai Authorization token | 
 
 After filling the [env](env) file, rename it to `.env` and vallah! You're just one step away.
 

@@ -2,7 +2,6 @@ telebot=<telegram-bot-token>
 users_id=<telegram-users-id-separated-by-comma>
 bard=<Google-bard-session-value>
 openai_cookie_file=<path-to-openai-cookie-file.json>
-openai_authorization=<openai-authorization-token> 
 logging_level=<either 10,20, 30, 40 or 50>
 show_exceptions=true
 default_chatbot=chatgpt

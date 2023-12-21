@@ -7,7 +7,7 @@ from Bard import Chatbot
 from WebChatGPT import ChatGPT
 
 __prog__ = "telegram-chatbots"
-__version__ = "0.0.2"
+__version__ = "0.0.3"
 
 
 load_dotenv(".env")
@@ -59,7 +59,6 @@ bard = Chatbot(
 logging.info("Initializing ChatGPT Chatbot")
 
 chatgpt = ChatGPT(
-    from_env("openai_authorization", ""),
     from_env("openai_cookie_file", ""),
 )
 
@@ -194,7 +193,7 @@ def chat_with_chatgpt(message):
 
 
 @bot.message_handler(func=lambda msg: True)
-@handle_chatbot()
+@handle_chatbot("Auto")
 def auto_detect_chatbot(message):
     if conversations[message.from_user.id]["chatbot"] == "bard":
         bot.reply_to(
