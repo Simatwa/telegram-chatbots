@@ -10,7 +10,7 @@ from Bard import Chatbot
 from WebChatGPT import ChatGPT
 
 __prog__ = "telegram-chatbots"
-__version__ = "0.0.3"
+__version__ = "0.1.0"
 
 format_exception = lambda e: e.args[1] if len(e.args) > 1 else str(e)
 
@@ -109,31 +109,52 @@ def anonymous_user(message):
     return response.strip()
 
 
+def verified_only():
+    """Terminates if user is anonymous"""
+
+    def decorator(func):
+        def main(message):
+            if not is_verified(message):
+                # Not a whitelisted user
+                logging.info(
+                    f"ANONYMOUS SERVING : {message.from_user.id} ({message.from_user.first_name}) - {message.text}"
+                )
+                return bot.reply_to(
+                    message,
+                    anonymous_user(message),
+                )
+            return func(message)
+
+        return main
+
+    return decorator
+
+
 @bot.message_handler(commands=["start", "help"])
+@verified_only()
 def display_help(message):
     sender = message.from_user.first_name
-    help_message = (
-        f"""
+    help_message = f"""
 	Hi **{sender}**.
     This bot will allow you to directly chat with **Bard** and **ChatGPT**
     
     > Available commands
     
     /start or /help : Show this messsage
-    /myId : Check your Telegram's ID
+    /myid : Check your Telegram's ID
     /bard : Chat with Bard - **Google**
     /chatgpt : Chat with ChatGPT - **OpenAI**
     /awesome : Control awesome parsing state
     /check <key> : Check awesome prompt value by key
+
+    To parse awesome-prompts use the format %(key)s in your text.
+    Where <key> is the awesome-prompt title or index.
     
     Default LLM is the one you recently used. ({conversations[message.from_user.id]['chatbot']})
     
     Have some fun!
    
    """.strip()
-        if is_verified(message)
-        else anonymous_user(message)
-    )
     logging.info(
         f"HELP SERVING : {message.from_user.id} ({message.from_user.first_name}) - {message.text}"
     )
@@ -143,7 +164,7 @@ def display_help(message):
     )
 
 
-@bot.message_handler(commands=["myId"])
+@bot.message_handler(commands=["myid"])
 def user_id(message):
     """Respond with user id"""
     logging.info(
@@ -156,6 +177,7 @@ def user_id(message):
 
 
 @bot.message_handler(commands=["awesome"])
+@verified_only()
 def config_awesome(message):
     markup = types.InlineKeyboardMarkup(row_width=2)
     item1 = types.InlineKeyboardButton(
@@ -192,12 +214,14 @@ def awesome_callback_query(call):
 
 
 @bot.message_handler(commands=["check"])
+@verified_only()
 def awesome_check(message):
     """Checks for a particular prompt"""
     key = " ".join(message.text.split(" ")[1:])
     bot.send_message(
         message.chat.id,
-        awesome_prompts.get(key) or f"No awesome prompt associated with the key 'key'.",
+        awesome_prompts.get(key)
+        or f"No awesome prompt associated with the key '{key}'.",
         parse_mode="Markdown",
     )
 
@@ -213,15 +237,6 @@ def handle_chatbot(llm_name: str = "", default_text: str = ERR):
     def decorator(func):
         def main(message):
             try:
-                if not is_verified(message):
-                    # Not a whitelisted user
-                    logging.info(
-                        f"ANONYMOUS SERVING : {message.from_user.id} ({message.from_user.first_name}) - {message.text}"
-                    )
-                    return bot.reply_to(
-                        message,
-                        anonymous_user(message),
-                    )
                 if llm_name:
                     conversations[message.from_user.id]["chatbot"] = llm_name
                 logging.info(
@@ -254,6 +269,7 @@ def handle_chatbot(llm_name: str = "", default_text: str = ERR):
 @bot.message_handler(
     commands=["bard"],
 )
+@verified_only()
 @handle_chatbot("bard")
 def chat_with_bard(message):
     bot.reply_to(
@@ -263,6 +279,7 @@ def chat_with_bard(message):
 
 
 @bot.message_handler(commands=["chatgpt"])
+@verified_only()
 @handle_chatbot("chatgpt")
 def chat_with_chatgpt(message):
     bot.reply_to(
@@ -272,6 +289,7 @@ def chat_with_chatgpt(message):
 
 
 @bot.message_handler(func=lambda msg: True)
+@verified_only()
 @handle_chatbot("Auto")
 def auto_detect_chatbot(message):
     if conversations[message.from_user.id]["chatbot"] == "bard":
