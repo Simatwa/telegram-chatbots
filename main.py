@@ -2,6 +2,9 @@
 import os
 import logging
 import telebot
+import requests
+import json
+from telebot import types
 from dotenv import load_dotenv
 from Bard import Chatbot
 from WebChatGPT import ChatGPT
@@ -9,6 +12,7 @@ from WebChatGPT import ChatGPT
 __prog__ = "telegram-chatbots"
 __version__ = "0.0.3"
 
+format_exception = lambda e: e.args[1] if len(e.args) > 1 else str(e)
 
 load_dotenv(".env")
 
@@ -31,6 +35,13 @@ logging_params = {
 if from_env("log_path", False):
     logging_params["filename"] = from_env("log_path", "telegram-chatbots.log")
 
+awesome_prompts_pdf = (
+    "https://github.com/Simatwa/gpt-cli/blob/main/assets/all-acts.pdf?raw=true"
+)
+awesome_prompts_json = (
+    "https://github.com/Simatwa/gpt-cli/blob/main/assets/all-acts.json?raw=true"
+)
+
 logging.basicConfig(**logging_params)
 logging.info(f"{__prog__} - v{__version__}")
 allowed_user_ids = from_env("users_id", "").split(",")
@@ -43,13 +54,12 @@ ERR = None if show_exceptions else "Error occurred while generating response!"
 
 logging.info(f"Whitelisted users : {allowed_user_ids}")
 
-format_exception = lambda e: e.args[1] if len(e.args) > 1 else str(e)
-
 default_settings = {
     "chatbot": from_env("default_chatbot", "chatgpt"),
+    "awesome_status": True,
 }
 
-conversations = {}
+conversations, awesome_prompts = {}, {}
 
 logging.info("Initializing Bard Chatbot")
 bard = Chatbot(
@@ -65,9 +75,19 @@ chatgpt = ChatGPT(
 logging.info("Initializing Telegram bot")
 bot = telebot.TeleBot(from_env("telebot", ""), parse_mode="Markdown")
 
+if from_env("awesome_prompts", "true") == "true":
+    logging.info("Loading awesome-prompts")
+    awesome_prompts = requests.get(awesome_prompts_json).json()
+    new_make = {}
+    for count, key_value in enumerate(awesome_prompts.items()):
+        # Links also index to a prompt
+        new_make[str(count)] = key_value[1]
+    awesome_prompts.update(new_make)
+    del new_make
+
 
 for user in allowed_user_ids:
-    assert user.isdigit(), "Users id can contain digits only"
+    assert user.isdigit(), "User id can contain digits only"
     conversations[int(user)] = default_settings
 
 
@@ -103,8 +123,10 @@ def display_help(message):
     /myId : Check your Telegram's ID
     /bard : Chat with Bard - **Google**
     /chatgpt : Chat with ChatGPT - **OpenAI**
-
-    Default LLM is the one you recently used.
+    /awesome : Control awesome parsing state
+    /check <key> : Check awesome prompt value by key
+    
+    Default LLM is the one you recently used. ({conversations[message.from_user.id]['chatbot']})
     
     Have some fun!
    
@@ -133,6 +155,53 @@ def user_id(message):
     )
 
 
+@bot.message_handler(commands=["awesome"])
+def config_awesome(message):
+    markup = types.InlineKeyboardMarkup(row_width=2)
+    item1 = types.InlineKeyboardButton(
+        "Activate-Awesome", callback_data=f"{message.from_user.id}:on"
+    )
+    item2 = types.InlineKeyboardButton(
+        "Deactivate-Awesome", callback_data=f"{message.from_user.id}:off"
+    )
+    item3 = types.InlineKeyboardButton(
+        "Retain-current", callback_data=f"{message.from_user.id}:retain"
+    )
+
+    markup.add(item1, item2, item3)
+
+    bot.send_message(message.chat.id, "Choose an option:", reply_markup=markup)
+
+
+@bot.callback_query_handler(func=lambda call: True)
+def awesome_callback_query(call):
+    user_id, call_data = call.data.split(":")
+    if call_data == "on":
+        conversations[int(user_id)]["awesome_status"] = True
+        bot.send_message(
+            int(user_id),
+            f"Awesome ON \n View latest awesome-prompts from [here]({awesome_prompts_pdf}.)",
+            parse_mode="Markdown",
+        )
+    elif call_data == "off":
+        conversations[int(user_id)]["awesome_status"] = False
+        bot.send_message(call.message.chat.id, "Awesome OFF")
+    else:
+        status = conversations[int(user_id)]["awesome_status"]
+        bot.send_message(call.message.chat.id, f"Awesome {'ON' if status else 'OFF'}")
+
+
+@bot.message_handler(commands=["check"])
+def awesome_check(message):
+    """Checks for a particular prompt"""
+    key = " ".join(message.text.split(" ")[1:])
+    bot.send_message(
+        message.chat.id,
+        awesome_prompts.get(key) or f"No awesome prompt associated with the key 'key'.",
+        parse_mode="Markdown",
+    )
+
+
 def handle_chatbot(llm_name: str = "", default_text: str = ERR):
     """Handles chatbot exceptions & validates user safely
 
@@ -158,9 +227,19 @@ def handle_chatbot(llm_name: str = "", default_text: str = ERR):
                 logging.info(
                     f"[{llm_name.upper()}] Serving : {message.from_user.id} ({message.from_user.first_name}) - {message.text}"
                 )
+                if conversations[message.from_user.id]["awesome_status"]:
+                    try:
+                        message.text = message.text % (awesome_prompts)
+                    except KeyError as e:
+                        bot.reply_to(
+                            message,
+                            f"Failed to parse awesome-prompt - {format_exception(e)}",
+                        )
+                        return
                 return func(message)
 
             except Exception as e:
+                logging.exception(e)
                 logging.error(format_exception(e))
                 return bot.reply_to(
                     message,
