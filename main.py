@@ -256,7 +256,6 @@ def handle_chatbot(llm_name: str = "", default_text: str = ERR):
                 return func(message)
 
             except Exception as e:
-                logging.exception(e)
                 logging.error(format_exception(e))
                 return bot.reply_to(
                     message,
