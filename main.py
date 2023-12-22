@@ -75,6 +75,8 @@ chatgpt = ChatGPT(
 logging.info("Initializing Telegram bot")
 bot = telebot.TeleBot(from_env("telebot", ""), parse_mode="Markdown")
 
+bot.remove_webhook()  # Remove any webhook if available
+
 if from_env("awesome_prompts", "true") == "true":
     logging.info("Loading awesome-prompts")
     awesome_prompts = requests.get(awesome_prompts_json).json()
@@ -288,7 +290,7 @@ def chat_with_chatgpt(message):
     )
 
 
-@bot.message_handler(func=lambda msg: True)
+@bot.message_handler(func=lambda msg: True, content_types=["text"])
 @verified_only()
 @handle_chatbot("Auto")
 def auto_detect_chatbot(message):
