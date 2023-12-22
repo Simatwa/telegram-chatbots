@@ -42,7 +42,7 @@ awesome_prompts_json = (
     "https://github.com/Simatwa/gpt-cli/blob/main/assets/all-acts.json?raw=true"
 )
 
-logging.basicConfig(**logging_params)
+logging.basicConfig(**logging_params, filemode="w")
 logging.info(f"{__prog__} - v{__version__}")
 allowed_user_ids = from_env("users_id", "").split(",")
 
